@@ -101,7 +101,11 @@ describe('RecallSdk request timeouts', () => {
     const pending = sdk.bot.list()
     await vi.advanceTimersByTimeAsync(50)
 
-    await expect(pending).resolves.toEqual({ results: [] })
+    await expect(pending).resolves.toEqual({
+      results: [],
+      next: null,
+      previous: null,
+    })
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
     const request = fetchMock.mock.calls[0]?.[0]

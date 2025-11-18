@@ -111,6 +111,29 @@ const createTimeoutAbortError = (
     request,
   })
 
+type CursorPageFields = {
+  next?: string | null
+  previous?: string | null
+}
+
+const extractCursorToken = (input?: string | null): string | null => {
+  if (!input) {
+    return null
+  }
+
+  try {
+    return new URL(input, DEFAULT_BASE_URL).searchParams.get('cursor')
+  } catch {
+    return null
+  }
+}
+
+const withCursorPagination = <T extends CursorPageFields>(payload: T): T => ({
+  ...payload,
+  next: extractCursorToken(payload.next),
+  previous: extractCursorToken(payload.previous),
+})
+
 export type RecallSdkOptions = {
   /**
    * Recall.ai API key. A `Bearer` prefix is added automatically when missing.
@@ -141,7 +164,7 @@ class BotModule {
     const result = await this.sdk.botList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -277,7 +300,7 @@ class CalendarEventsModule {
     const result = await this.sdk.calendarEventsList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -356,7 +379,7 @@ class CalendarAccountsModule {
     const result = await this.sdk.calendarsList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -628,7 +651,7 @@ class RecordingModule {
     const result = await this.sdk.recordingList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -699,7 +722,7 @@ class TranscriptModule {
     const result = await this.sdk.transcriptList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -770,7 +793,7 @@ class AudioMixedModule {
     const result = await this.sdk.audioMixedList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -841,7 +864,7 @@ class AudioSeparateModule {
     const result = await this.sdk.audioSeparateList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -1022,7 +1045,7 @@ class VideoMixedModule {
     const result = await this.sdk.videoMixedList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**
@@ -1093,7 +1116,7 @@ class VideoSeparateModule {
     const result = await this.sdk.videoSeparateList<true>({
       ...(query ? { query } : {}),
     })
-    return result.data
+    return withCursorPagination(result.data)
   }
 
   /**

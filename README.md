@@ -42,9 +42,18 @@ await recall.bot.update(bot.id, {
   metadata: { source: 'docs-example' },
 })
 
+const now = new Date().toISOString()
+
 const events = await recall.calendar.listEvents({
-  start_time__gte: new Date().toISOString(),
+  start_time__gte: now,
 })
+
+if (events.next) {
+  const moreEvents = await recall.calendar.listEvents({
+    start_time__gte: now,
+    cursor: events.next,
+  })
+}
 
 const nextEvent = events.results?.[0]
 if (nextEvent) {
@@ -165,6 +174,8 @@ try {
 - `recall.video` – manage video artifacts via the same helper pattern used for audio.
 
 Every method takes lightweight identifiers (`botId`, `eventId`, `calendarId`, etc.) with optional request bodies or query objects that match the generated TypeScript types.
+
+Paginated helpers (bots, calendars, calendar events, recordings, transcripts, audio/video artifacts) automatically replace the Recall-provided pagination URLs with the raw cursor tokens, so you can pass `response.next` or `response.previous` directly back via the `cursor` query param without any manual parsing.
 
 ## Generated client access
 
