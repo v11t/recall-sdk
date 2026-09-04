@@ -75,4 +75,34 @@ describe('pagination cursor normalization', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+
+  it('keeps page-numbered links that carry no cursor', async () => {
+    const next =
+      'https://us-east-1.recall.ai/api/v1/bot/?join_at_after=2026-09-04T00%3A00%3A00Z&page=2'
+
+    globalThis.fetch = vi
+      .fn<(request: Request) => Promise<Response>>()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ count: 150, results: [], next, previous: null }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      ) as typeof fetch
+
+    const sdk = new RecallSdk({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://us-east-1.recall.ai',
+    })
+
+    const page1 = await sdk.bot.list({
+      join_at_after: '2026-09-04T00:00:00Z',
+      page: 1,
+    })
+
+    expect(page1.next).toBe(next)
+    expect(page1.previous).toBeNull()
+  })
 })

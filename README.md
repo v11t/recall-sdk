@@ -175,7 +175,7 @@ try {
 
 Every method takes lightweight identifiers (`botId`, `eventId`, `calendarId`, etc.) with optional request bodies or query objects that match the generated TypeScript types.
 
-Paginated helpers (bots, calendars, calendar events, recordings, transcripts, audio/video artifacts) automatically replace the Recall-provided pagination URLs with the raw cursor tokens, so you can pass `response.next` or `response.previous` directly back via the `cursor` query param without any manual parsing.
+Paginated helpers (bots, calendars, calendar events, recordings, transcripts, audio/video artifacts) automatically replace the Recall-provided pagination URLs with the raw cursor tokens, so you can pass `response.next` or `response.previous` directly back via the `cursor` query param without any manual parsing. Endpoints that paginate by page number (`bot.list`) keep the raw `next`/`previous` URLs; page on `count` or read `page` from the URL.
 
 ## Generated client access
 

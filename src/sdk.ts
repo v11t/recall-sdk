@@ -116,15 +116,17 @@ type CursorPageFields = {
   previous?: string | null
 }
 
+// Endpoints that paginate by page number (bots) link with `page=`, not
+// `cursor=`; keep those links intact instead of nulling them.
 const extractCursorToken = (input?: string | null): string | null => {
   if (!input) {
     return null
   }
 
   try {
-    return new URL(input, DEFAULT_BASE_URL).searchParams.get('cursor')
+    return new URL(input, DEFAULT_BASE_URL).searchParams.get('cursor') ?? input
   } catch {
-    return null
+    return input
   }
 }
 
