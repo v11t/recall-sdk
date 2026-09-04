@@ -1,6 +1,7 @@
 import { createClient } from './generated/client'
 import { GeneratedRecallSdk } from './generated/sdk.gen'
 import type {
+  Bot,
   AudioMixedDestroyResponse,
   AudioMixedListData,
   AudioMixedListResponse,
@@ -134,14 +135,13 @@ const withCursorPagination = <T extends CursorPageFields>(payload: T): T => ({
   previous: extractCursorToken(payload.previous),
 })
 
-type PageFields = {
+/** `bot.list` response with page numbers for the `page` query param. */
+export type BotListPage = {
+  count?: number
+  results?: Bot[]
   next: number | null
   previous: number | null
 }
-
-/** `bot.list` response with page numbers for the `page` query param. */
-export type BotListPage = Pick<BotListResponse, 'count' | 'results'> &
-  PageFields
 
 // Page-numbered endpoints (bots) link with `page=`, not `cursor=`.
 const extractPageNumber = (input?: string | null): number | null => {
