@@ -111,14 +111,14 @@ describe('pagination cursor normalization', () => {
     const query = { join_at_after: '2026-09-04T00:00:00Z' }
 
     const page2 = await sdk.bot.list({ ...query, page: 2 })
-    expect(page2.next).toBe('3')
-    expect(page2.previous).toBe('1')
+    expect(page2.next).toBe(3)
+    expect(page2.previous).toBe(1)
 
     const page3 = await sdk.bot.list({
       ...query,
-      page: Number(page2.next),
+      page: page2.next ?? undefined,
     })
     expect(page3.next).toBeNull()
-    expect(page3.previous).toBe('2')
+    expect(page3.previous).toBe(2)
   })
 })

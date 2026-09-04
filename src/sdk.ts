@@ -111,7 +111,7 @@ const createTimeoutAbortError = (
     request,
   })
 
-type PaginationLinkFields = {
+type CursorPageFields = {
   next?: string | null
   previous?: string | null
 }
@@ -128,31 +128,39 @@ const extractCursorToken = (input?: string | null): string | null => {
   }
 }
 
-const withCursorPagination = <T extends PaginationLinkFields>(
-  payload: T,
-): T => ({
+const withCursorPagination = <T extends CursorPageFields>(payload: T): T => ({
   ...payload,
   next: extractCursorToken(payload.next),
   previous: extractCursorToken(payload.previous),
 })
 
-// Page-numbered endpoints (bots) link with `page=`, not `cursor=`. The page
-// number is kept as a string so `next`/`previous` stay a token to hand back.
-const extractPageNumber = (input?: string | null): string | null => {
+type PageFields = {
+  next: number | null
+  previous: number | null
+}
+
+/** `bot.list` response with page numbers for the `page` query param. */
+export type BotListPage = Pick<BotListResponse, 'count' | 'results'> &
+  PageFields
+
+// Page-numbered endpoints (bots) link with `page=`, not `cursor=`.
+const extractPageNumber = (input?: string | null): number | null => {
   if (!input) {
     return null
   }
 
   try {
+    const page = new URL(input, DEFAULT_BASE_URL).searchParams.get('page')
     // Recall omits `page` from links to the first page.
-    return new URL(input, DEFAULT_BASE_URL).searchParams.get('page') ?? '1'
+    return page === null ? 1 : Number(page)
   } catch {
     return null
   }
 }
 
-const withPagePagination = <T extends PaginationLinkFields>(payload: T): T => ({
-  ...payload,
+const toBotListPage = (payload: BotListResponse): BotListPage => ({
+  count: payload.count,
+  results: payload.results,
   next: extractPageNumber(payload.next),
   previous: extractPageNumber(payload.previous),
 })
@@ -183,11 +191,11 @@ class BotModule {
    * This endpoint is rate limited to:
    * - 60 requests per min per workspace
    */
-  async list(query?: BotListData['query']): Promise<BotListResponse> {
+  async list(query?: BotListData['query']): Promise<BotListPage> {
     const result = await this.sdk.botList<true>({
       ...(query ? { query } : {}),
     })
-    return withPagePagination(result.data)
+    return toBotListPage(result.data)
   }
 
   /**
