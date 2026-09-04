@@ -136,35 +136,22 @@ const withCursorPagination = <T extends PaginationLinkFields>(
   previous: extractCursorToken(payload.previous),
 })
 
-/**
- * A list response from a page-numbered endpoint: `next` and `previous` are
- * page numbers for the `page` query param, not cursor tokens.
- */
-export type PageNumbered<T extends PaginationLinkFields> = Omit<
-  T,
-  'next' | 'previous'
-> & {
-  next: number | null
-  previous: number | null
-}
-
-const extractPageNumber = (input?: string | null): number | null => {
+// Page-numbered endpoints (bots) link with `page=`, not `cursor=`. The page
+// number is kept as a string so `next`/`previous` stay a token to hand back.
+const extractPageNumber = (input?: string | null): string | null => {
   if (!input) {
     return null
   }
 
   try {
-    const page = new URL(input, DEFAULT_BASE_URL).searchParams.get('page')
     // Recall omits `page` from links to the first page.
-    return page === null ? 1 : Number(page)
+    return new URL(input, DEFAULT_BASE_URL).searchParams.get('page') ?? '1'
   } catch {
     return null
   }
 }
 
-const withPagePagination = <T extends PaginationLinkFields>(
-  payload: T,
-): PageNumbered<T> => ({
+const withPagePagination = <T extends PaginationLinkFields>(payload: T): T => ({
   ...payload,
   next: extractPageNumber(payload.next),
   previous: extractPageNumber(payload.previous),
@@ -196,9 +183,7 @@ class BotModule {
    * This endpoint is rate limited to:
    * - 60 requests per min per workspace
    */
-  async list(
-    query?: BotListData['query'],
-  ): Promise<PageNumbered<BotListResponse>> {
+  async list(query?: BotListData['query']): Promise<BotListResponse> {
     const result = await this.sdk.botList<true>({
       ...(query ? { query } : {}),
     })
