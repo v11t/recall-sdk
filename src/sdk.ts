@@ -116,17 +116,15 @@ type CursorPageFields = {
   previous?: string | null
 }
 
-// Endpoints that paginate by page number (bots) link with `page=`, not
-// `cursor=`; keep those links intact instead of nulling them.
 const extractCursorToken = (input?: string | null): string | null => {
   if (!input) {
     return null
   }
 
   try {
-    return new URL(input, DEFAULT_BASE_URL).searchParams.get('cursor') ?? input
+    return new URL(input, DEFAULT_BASE_URL).searchParams.get('cursor')
   } catch {
-    return input
+    return null
   }
 }
 
@@ -134,6 +132,41 @@ const withCursorPagination = <T extends CursorPageFields>(payload: T): T => ({
   ...payload,
   next: extractCursorToken(payload.next),
   previous: extractCursorToken(payload.previous),
+})
+
+/**
+ * A list response from a page-numbered endpoint: `next` and `previous` are
+ * page numbers for the `page` query param, not cursor tokens.
+ */
+export type PageNumbered<T extends CursorPageFields> = Omit<
+  T,
+  'next' | 'previous'
+> & {
+  next: number | null
+  previous: number | null
+}
+
+const extractPageNumber = (input?: string | null): number | null => {
+  if (!input) {
+    return null
+  }
+
+  try {
+    // Recall omits `page` from links to the first page.
+    return Number(
+      new URL(input, DEFAULT_BASE_URL).searchParams.get('page') ?? 1,
+    )
+  } catch {
+    return null
+  }
+}
+
+const withPagePagination = <T extends CursorPageFields>(
+  payload: T,
+): PageNumbered<T> => ({
+  ...payload,
+  next: extractPageNumber(payload.next),
+  previous: extractPageNumber(payload.previous),
 })
 
 export type RecallSdkOptions = {
@@ -162,11 +195,13 @@ class BotModule {
    * This endpoint is rate limited to:
    * - 60 requests per min per workspace
    */
-  async list(query?: BotListData['query']): Promise<BotListResponse> {
+  async list(
+    query?: BotListData['query'],
+  ): Promise<PageNumbered<BotListResponse>> {
     const result = await this.sdk.botList<true>({
       ...(query ? { query } : {}),
     })
-    return withCursorPagination(result.data)
+    return withPagePagination(result.data)
   }
 
   /**
