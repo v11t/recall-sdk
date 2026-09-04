@@ -111,7 +111,7 @@ const createTimeoutAbortError = (
     request,
   })
 
-type CursorPageFields = {
+type PaginationLinkFields = {
   next?: string | null
   previous?: string | null
 }
@@ -128,7 +128,9 @@ const extractCursorToken = (input?: string | null): string | null => {
   }
 }
 
-const withCursorPagination = <T extends CursorPageFields>(payload: T): T => ({
+const withCursorPagination = <T extends PaginationLinkFields>(
+  payload: T,
+): T => ({
   ...payload,
   next: extractCursorToken(payload.next),
   previous: extractCursorToken(payload.previous),
@@ -138,7 +140,7 @@ const withCursorPagination = <T extends CursorPageFields>(payload: T): T => ({
  * A list response from a page-numbered endpoint: `next` and `previous` are
  * page numbers for the `page` query param, not cursor tokens.
  */
-export type PageNumbered<T extends CursorPageFields> = Omit<
+export type PageNumbered<T extends PaginationLinkFields> = Omit<
   T,
   'next' | 'previous'
 > & {
@@ -152,16 +154,15 @@ const extractPageNumber = (input?: string | null): number | null => {
   }
 
   try {
+    const page = new URL(input, DEFAULT_BASE_URL).searchParams.get('page')
     // Recall omits `page` from links to the first page.
-    return Number(
-      new URL(input, DEFAULT_BASE_URL).searchParams.get('page') ?? 1,
-    )
+    return page === null ? 1 : Number(page)
   } catch {
     return null
   }
 }
 
-const withPagePagination = <T extends CursorPageFields>(
+const withPagePagination = <T extends PaginationLinkFields>(
   payload: T,
 ): PageNumbered<T> => ({
   ...payload,
